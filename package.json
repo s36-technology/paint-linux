@@ -1,0 +1,82 @@
+{
+  "name": "paint-linux",
+  "description": "A simple paint application for Linux",
+  "homepage": "https://paint.app",
+  "author": "Paint Team <info@paint.app>",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "engines": {
+    "node": ">=26.3.0",
+    "npm": ">=11.16.0"
+  },
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "start": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@google/genai": "^2.8.0",
+    "@tailwindcss/vite": "^4.3.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "better-sqlite3": "^12.10.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "lucide-react": "^1.17.0",
+    "motion": "^12.40.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "vite": "^8.0.16"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.3.3",
+    "electron-builder": "^26.8.1",
+    "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.4",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.16",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "s36-technology.paint-linux",
+    "productName": "Paint Linux",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "assets/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "snap",
+        "pacman",
+        "tar.gz",
+        "flatpak"
+      ],
+      "icon": "build/icons/linux/",
+      "category": "Graphics",
+      "maintainer": "Paint Team <info@paint.app>"
+    },
+    "flatpak": {
+      "runtimeVersion": "25.08",
+      "base": "org.electronjs.Electron2.BaseApp",
+      "baseVersion": "25.08"
+    }
+  }
+}
