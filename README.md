@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="512" height="512" alt="icon" src="https://github.com/user-attachments/assets/45b04c93-e6c6-48bd-b9a2-0af8f62554ed" />
+<img width="512" height="512" alt="icon" src="https://raw.githubusercontent.com/s36-technology/paint-linux/refs/heads/master/logo.svg" />
 
 
 # Linux Paint
