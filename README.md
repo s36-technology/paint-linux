@@ -5,8 +5,6 @@
 
 # Linux Paint
 
-**Кроссплатформенный графический редактор в стиле Windows 11 Paint**
-
 **Cross-platform graphics editor inspired by Windows 11 Paint**
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com)
@@ -15,192 +13,13 @@
 [![React](https://img.shields.io/badge/React-19.0.0-61DAFB.svg?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.2-3178C6.svg?logo=typescript)](https://www.typescriptlang.org/)
 
-[English](#english) | [Русский](#русский)
+[English](#english)
 
 </div>
 
 ---
 
-## <a id="русский"></a>🇷 О Проекте (Russian)
-
-**Linux Paint** — это современный графический редактор с открытым исходным кодом, созданный по мотивам классического приложения Paint из Windows 11. Приложение оптимизировано для работы на Linux и в веб-браузерах, предоставляя пользователям интуитивно понятный интерфейс и богатый набор инструментов для рисования и редактирования изображений.
-
-<img width="2560" height="1396" alt="изображение" src="https://github.com/user-attachments/assets/9f0cc922-11e0-4905-96e3-b2024217306a" />
-
-
-### ✨ Особенности
-
-#### 🎨 Инструменты рисования
-- **Карандаш** — базовый инструмент для рисования
-- **Кисть** — кисть с настраиваемым размером
-- **Ластик** — стирание элементов
-- **Заливка** — заполнение области цветом
-- **Текст** — добавление текстовых элементов
-- **Пипетка** — выбор цвета с холста
-- **Лупа** — увеличение/уменьшение масштаба
-
-#### 🖌️ Разнообразные кисти
-- Каллиграфическая кисть
-- Перьевая ручка
-- Распылитель (Airbrush)
-- Кисть для масляных красок
-- Цветной карандаш (Crayon)
-- Маркер
-- Текстурный карандаш
-- Кисть для акварели
-
-#### 🔷 Фигуры
-- Линия, Кривая Безье
-- Прямоугольник, Скруглённый прямоугольник
-- Круг, Эллипс
-- Треугольник, Прямоугольный треугольник
-- Ромб, Пятиугольник, Шестиугольник
-- Многоугольник (произвольный)
-- Стрелки (вправо, влево, вверх, вниз)
-- Звёзды (4, 5, 6 лучей)
-- Выноски (овальная, скруглённая, облако)
-- Сердце, Молния
-
-#### ✂️ Выделение и редактирование
-- Прямоугольное выделение
-- Произвольное выделение (Лассо)
-- Перемещение и изменение размера выделенной области
-- Поворот выделенного
-- Отражение по горизонтали/вертикали
-- Вырезать, Копировать, Вставить
-- Обрезка (Crop)
-
-#### 🖼️ Работа с изображением
-- Изменение размера холста
-- Поворот изображения
-- Отражение изображения
-- Инверсия цветов
-- Очистка холста
-- Линейки и линии сетки
-- Миниатюра навигации
-
-#### 📁 Файловые операции
-- Создание нового файла
-- Открытие файлов (PNG, JPG, GIF, WebP, BMP)
-- Сохранение и Сохранение как
-- Печать
-- Установка как обои рабочего стола
-- Поделиться изображением
-
-#### ⌨️ Горячие клавиши
-| Действие | Комбинация |
-|----------|------------|
-| Новый файл | Ctrl+N |
-| Открыть | Ctrl+O |
-| Сохранить | Ctrl+S |
-| Свойства | Ctrl+E |
-| Выделить всё | Ctrl+A |
-| Копировать | Ctrl+C |
-| Вырезать | Ctrl+X |
-| Вставить | Ctrl+V |
-| Отменить | Ctrl+Z |
-| Повторить | Ctrl+Y / Ctrl+Shift+Z |
-| Выход | Ctrl+Q |
-| Очистить выделение | Ctrl+W |
-| Обрезать | Ctrl+Shift+X |
-| Линейки | Ctrl+R |
-| Сетка | Ctrl+G |
-| Полный экран | F11 |
-| Увеличить | Ctrl++ |
-| Уменьшить | Ctrl+- |
-
-#### 🌐 Многоязычность
-Поддержка 6 языков:
-- 🇬🇧 English
-- 🇷🇺 Русский
-- 🇪 Español
-- 🇷 Français
-- 🇪 Deutsch
-- 🇨🇳 中文
-
-### 🛠️ Технологии
-
-- **Frontend:** React 19, TypeScript, Tailwind CSS 4, Motion (анимации)
-- **Desktop:** Electron 40, Vite 6
-- **Icons:** Lucide React
-- **Сборка:** electron-builder (AppImage, deb, snap, pacman, flatpak, tar.gz)
-
-### 📋 Требования
-
-- Node.js >= 18
-- npm >= 9
-- Linux (рекомендуется) или любая ОС с поддержкой Electron
-
-### 🚀 Установка и запуск
-
-```bash
-# 1. Клонируйте репозиторий
-git clone <repository-url>
-cd linux-paint
-
-# 2. Установите зависимости
-npm install
-
-# 3. Запуск в режиме разработки
-npm run dev
-
-# 4. Сборка приложения
-npm run build
-
-# 5. Сборка дистрибутивов для Linux
-npm run dist
-```
-
-### 📦 Доступные пакеты
-
-После выполнения `npm run dist` в папке `dist-electron/` будут созданы:
-- `.AppImage` — портативная версия
-- `.deb` — для Debian/Ubuntu
-- `.snap` — для Snap Store
-- `.pacman` — для Arch Linux
-- `.flatpak` — для Flatpak
-- `.tar.gz` — архив
-
-### 📁 Структура проекта
-
-```
-linux-paint/
-├── electron/           # Electron main процесс
-│   ├── main.cjs       # Главный процесс Electron
-│   └── preload.cjs    # Preload скрипт
-├── src/               # Исходный код React
-│   ├── components/    # React компоненты
-│   │   ├── Toolbar.tsx
-│   │   └── DrawingCanvas.tsx
-│   ├── App.tsx        # Главный компонент
-│   ├── i18n.ts        # Интернационализация
-│   ├── types.ts       # TypeScript типы
-│   ├── main.tsx       # Точка входа
-│   └── index.css      # Глобальные стили
-├── build/icons/       # Иконки приложения
-│   └── linux/
-│       └── icon.png
-├── package.json       # Зависимости и скрипты
-├── tsconfig.json      # Конфигурация TypeScript
-├── vite.config.ts     # Конфигурация Vite
-└── README.md          # Документация
-```
-
-### 🔧 Скрипты npm
-
-| Команда | Описание |
-|---------|----------|
-| `npm run dev` | Запуск в режиме разработки |
-| `npm run build` | Сборка production версии |
-| `npm run preview` | Предпросмотр сборки |
-| `npm run start` | Запуск Electron + Vite dev server |
-| `npm run dist` | Сборка дистрибутивов |
-| `npm run clean` | Очистка папки dist |
-| `npm run lint` | Проверка TypeScript |
-
----
-
-## <a id="english"></a>🇺🇸 About Project (English)
+## <a id="english"></a>🇺🇸 About Project
 
 **Linux Paint** is a modern open-source graphics editor inspired by the classic Paint application from Windows 11. The application is optimized for Linux and web browsers, providing users with an intuitive interface and a rich set of tools for drawing and image editing.
 
@@ -286,25 +105,26 @@ linux-paint/
 | Zoom Out | Ctrl+- |
 
 #### 🌐 Internationalization
-Support for 6 languages:
-- 🇬 English
-- 🇷🇺 Русский
-- 🇪 Español
-- 🇫 Français
-- 🇩🇪 Deutsch
-- 🇨 中文
+Support for 7 languages:
+- 🇬🇧 English
+- 🇷🇺 Russian
+- 🇪🇸 Spanish
+- 🇫🇷 French
+- 🇩🇪 German
+- 🇨🇳 Chinese
+- 🇻🇳 Vietnamese
 
 ### ️ Tech Stack
 
 - **Frontend:** React 19, TypeScript, Tailwind CSS 4, Motion (animations)
-- **Desktop:** Electron 40, Vite 6
+- **Desktop:** Electron 42, Vite 8
 - **Icons:** Lucide React
 - **Build:** electron-builder (AppImage, deb, snap, pacman, flatpak, tar.gz)
 
 ### 📋 Requirements
 
-- Node.js >= 18
-- npm >= 9
+- Node.js >= 26
+- npm >= 11
 - Linux (recommended) or any OS with Electron support
 
 ### 🚀 Installation and Running
@@ -378,11 +198,9 @@ linux-paint/
 
 <div align="center">
 
-### 📄 License / Лицензия
+### 📄 License
 
 MIT License
-
-**Linux Paint** — создано с ❤️ для Linux-сообщества
 
 **Linux Paint** — made with ❤️ for the Linux community
 
