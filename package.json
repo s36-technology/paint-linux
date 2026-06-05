@@ -24,7 +24,6 @@
     "@google/genai": "^2.8.0",
     "@tailwindcss/vite": "^4.3.0",
     "@vitejs/plugin-react": "^6.0.2",
-    "better-sqlite3": "^12.10.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "lucide-react": "^1.17.0",
@@ -62,16 +61,17 @@
     ],
     "linux": {
       "target": [
-        "AppImage",
-        "deb",
-        "snap",
-        "pacman",
-        "tar.gz",
-        "flatpak"
+        "deb"
       ],
-      "icon": "build/icons/linux/",
+      "icon": "logo.svg",
       "category": "Graphics",
       "maintainer": "Paint Team <info@paint.app>"
+    },
+    "snap": {
+      "confinement": "strict",
+      "grade": "stable",
+      "summary": "Modern MS Paint alternative for Linux",
+      "description": "Paint Linux brings the simplicity of Microsoft Paint to Linux desktops.\n  Create drawings, edit images, add text, crop screenshots, and perform\n  everyday graphic tasks with an intuitive interface. Perfect for users\n  seeking a familiar and easy-to-use painting application."
     },
     "flatpak": {
       "runtimeVersion": "25.08",
