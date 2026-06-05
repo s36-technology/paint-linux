@@ -21,6 +21,12 @@
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
-  }
+    "noEmit": true,
+    "resolveJsonModule": true
+  },
+  "exclude": [
+    "dist",
+    "dist-electron",
+    "node_modules"
+  ]
 }

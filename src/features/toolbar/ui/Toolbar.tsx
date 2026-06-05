@@ -7,8 +7,10 @@ import {
   SquareDashed, Hexagon, Pentagon, Diamond, Star, MessageCircle,
   LassoSelect, Maximize2, Trash2, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Heart, Zap, Cloud
 } from 'lucide-react';
-import { Tool } from '../types';
-import { t } from '../i18n';
+import { Tool } from '../../../shared/types';
+import { t } from '../../../shared/i18n';
+import { DEFAULT_COLORS } from '../model/palette';
+import ToolBtn from './ToolButton';
 
 interface ToolbarProps {
   currentTool: Tool;
@@ -20,16 +22,6 @@ interface ToolbarProps {
   strokeSize: number;
   setStrokeSize: (s: number) => void;
 }
-
-const ToolBtn = ({ icon, active, onClick, label }: { icon: React.ReactNode, active: boolean, onClick: () => void, label?: string }) => (
-  <button
-    title={label}
-    className={`p-1.5 rounded flex items-center justify-center transition-colors ${active ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-300'}`}
-    onClick={onClick}
-  >
-    {icon}
-  </button>
-);
 
 export default function Toolbar({
   currentTool, setCurrentTool,
@@ -119,15 +111,6 @@ export default function Toolbar({
     setCustomColors(newCustomColors);
     localStorage.setItem('paint-custom-colors', JSON.stringify(newCustomColors));
   };
-
-  const colors = [
-    // Row 1
-    '#000000', '#7f7f7f', '#880015', '#ed1c24', '#ff7f27', '#fff200', '#22b14c', '#00a2e8', '#3f48cc', '#a349a4',
-    // Row 2
-    '#ffffff', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7',
-    // Row 3
-    '#0c0c0c', '#333333', '#59000e', '#9e0013', '#c24b00', '#b5a600', '#0e732d', '#006494', '#202680', '#6b236c'
-  ];
 
   return (
     <div className="h-28 bg-[#202020] border-b border-black/40 flex items-start px-2 py-2 gap-1 shadow-sm z-50 relative text-gray-300 select-none overflow-x-auto overflow-y-hidden flex-shrink-0">
@@ -369,7 +352,7 @@ export default function Toolbar({
           
           <div className="flex flex-col gap-1 flex-shrink-0">
             <div className="grid grid-cols-10 gap-1">
-              {colors.map((c, i) => (
+              {DEFAULT_COLORS.map((c, i) => (
                 <button
                   key={i}
                   className="w-4 h-4 rounded-full border border-white/10 hover:scale-110 transition-transform flex-shrink-0"
