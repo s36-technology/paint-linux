@@ -3,3 +3,16 @@ export const DEFAULT_COLORS = [
   '#ffffff', '#c3c3c3', '#b97a57', '#ffaec9', '#ffc90e', '#efe4b0', '#b5e61d', '#99d9ea', '#7092be', '#c8bfe7',
   '#0c0c0c', '#333333', '#59000e', '#9e0013', '#c24b00', '#b5a600', '#0e732d', '#006494', '#202680', '#6b236c',
 ];
+
+export const TEXT_BACKGROUND_COLORS = [
+  '#ffffff',
+  '#fff2cc',
+  '#ffd966',
+  '#f4cccc',
+  '#d9ead3',
+  '#cfe2f3',
+  '#d9d2e9',
+  '#eeeeee',
+  '#202020',
+  '#000000',
+];

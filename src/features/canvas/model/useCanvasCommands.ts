@@ -41,12 +41,21 @@ export function useCanvasCommands({
   height,
   onDraw,
 }: UseCanvasCommandsParams) {
+  const writeCanvasToClipboard = async (canvas: HTMLCanvasElement) => {
+    const blob = await new Promise<Blob | null>(resolve => {
+      canvas.toBlob(resolve, 'image/png');
+    });
+    if (blob) {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob }),
+      ]);
+    }
+  };
+
   const handleCopy = () => {
     const img = selection?.image || extractSelection(false);
     if (img) {
-      img.toBlob(blob => {
-        if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      });
+      void writeCanvasToClipboard(img);
     }
     setContextMenu(null);
   };
@@ -54,9 +63,7 @@ export function useCanvasCommands({
   const handleCut = () => {
     const img = selection?.image || extractSelection(true);
     if (img) {
-      img.toBlob(blob => {
-        if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      });
+      void writeCanvasToClipboard(img);
     }
     setSelection(null);
     setContextMenu(null);
@@ -155,19 +162,15 @@ export function useCanvasCommands({
     };
 
     const handleRequestCopy = async () => {
-      if (canvasRef.current) {
-        try {
-          const blob = await new Promise<Blob | null>(resolve => {
-            canvasRef.current!.toBlob(resolve, 'image/png');
-          });
-          if (blob) {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob }),
-            ]);
-          }
-        } catch (err) {
-          console.error('Failed to copy image: ', err);
+      try {
+        const img = selection?.image || extractSelection(false);
+        if (img) {
+          await writeCanvasToClipboard(img);
+        } else if (canvasRef.current) {
+          await writeCanvasToClipboard(canvasRef.current);
         }
+      } catch (err) {
+        console.error('Failed to copy image: ', err);
       }
     };
 
@@ -176,29 +179,15 @@ export function useCanvasCommands({
         const img = selection.image || extractSelection(true);
         if (img) {
           try {
-            const blob = await new Promise<Blob | null>(resolve => {
-              img.toBlob(resolve, 'image/png');
-            });
-            if (blob) {
-              await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob }),
-              ]);
-              setSelection(null);
-            }
+            await writeCanvasToClipboard(img);
+            setSelection(null);
           } catch (err) {
             console.error('Failed to cut image: ', err);
           }
         }
       } else if (canvasRef.current) {
         try {
-          const blob = await new Promise<Blob | null>(resolve => {
-            canvasRef.current!.toBlob(resolve, 'image/png');
-          });
-          if (blob) {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob }),
-            ]);
-          }
+          await writeCanvasToClipboard(canvasRef.current);
         } catch (err) {
           console.error('Failed to cut image: ', err);
         }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CanvasProps, CurveState, Point, PolygonState, SelectionState } from '../model/types';
+import { CanvasProps, CurveState, Point, PolygonState, SelectionState, TextInputState } from '../model/types';
 import { getCanvasCursor } from '../model/cursor';
 import { floodFill, hexToRgb } from '../lib/canvasPixels';
 import { applyBrushStroke, drawShapePreview, isBrushTool, isShapeTool } from '../lib/drawingTools';
@@ -10,11 +10,11 @@ import CanvasRulers from './CanvasRulers';
 import CanvasTextInput from './CanvasTextInput';
 import SelectionContextMenu from './SelectionContextMenu';
 
-export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines }: CanvasProps) {
+export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines, textBackgroundMode, textBackgroundColor }: CanvasProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<Point | null>(null);
   const [snapshot, setSnapshot] = useState<ImageData | null>(null);
-  const [textInput, setTextInput] = useState<(Point & { text: string }) | null>(null);
+  const [textInput, setTextInput] = useState<TextInputState | null>(null);
   const [curveState, setCurveState] = useState<CurveState | null>(null);
   const [polygonState, setPolygonState] = useState<PolygonState | null>(null);
   
@@ -141,6 +141,9 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
     if (currentTool !== 'select' && currentTool !== 'lasso-select' && selection) {
       commitSelection();
     }
+    if (currentTool !== 'text' && textInput) {
+      commitTextInput();
+    }
     if (currentTool !== 'curve' && curveState) {
       setCurveState(null);
     }
@@ -187,7 +190,9 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
   }, [selection, width, height]);
 
   const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (currentTool !== 'text' && currentTool !== 'pointer') {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
     if (contextMenu) setContextMenu(null);
 
     const canvas = canvasRef.current;
@@ -231,13 +236,32 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
       return;
     }
 
+    if (currentTool === 'pointer') {
+      return;
+    }
+
     if (currentTool === 'text') {
-      setTextInput({ x, y, text: '' });
+      if (textInput) {
+        commitTextInput();
+      }
+      const screenScale = rect.width / canvas.width;
+      const textFontSize = Math.max(16, strokeSize * 4);
+      const textPadding = 4;
+      setTextInput({
+        x,
+        y,
+        screenX: e.clientX,
+        screenY: e.clientY,
+        scale: screenScale,
+        w: 240 / screenScale,
+        h: textFontSize * 1.2 + textPadding * 2,
+        text: '',
+      });
       return;
     }
 
     if (textInput) {
-      setTextInput(null);
+      commitTextInput();
     }
 
     if (currentTool === 'curve') {
@@ -505,7 +529,9 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
   };
 
   const stopDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
     if (currentTool === 'select' || currentTool === 'lasso-select') {
       setSelection(prev => {
         if (!prev) return prev;
@@ -628,16 +654,48 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
       const fontSize = Math.max(16, strokeSize * 4);
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(textInput.x, textInput.y, textInput.w, textInput.h);
+        ctx.clip();
+        if (textBackgroundMode === 'color') {
+          ctx.fillStyle = textBackgroundColor;
+          ctx.fillRect(textInput.x, textInput.y, textInput.w, textInput.h);
+        }
         ctx.font = `${fontSize}px Arial`;
         ctx.fillStyle = primaryColor;
         ctx.textBaseline = 'top';
-        textInput.text.split('\n').forEach((line, i) => {
-          ctx.fillText(line, textInput.x, textInput.y + i * (fontSize * 1.2));
+        const padding = 4;
+        const maxTextWidth = Math.max(1, textInput.w - padding * 2);
+        wrapCanvasText(ctx, textInput.text, maxTextWidth).forEach((line, i) => {
+          ctx.fillText(line, textInput.x + padding, textInput.y + padding + i * (fontSize * 1.2));
         });
+        ctx.restore();
         onDraw(canvasRef.current.toDataURL());
       }
     }
     setTextInput(null);
+  };
+
+  const wrapCanvasText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+    return text.split('\n').flatMap(paragraph => {
+      const words = paragraph.split(/\s+/);
+      const lines: string[] = [];
+      let line = '';
+
+      words.forEach(word => {
+        const testLine = line ? `${line} ${word}` : word;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = testLine;
+        }
+      });
+
+      lines.push(line);
+      return lines;
+    });
   };
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -670,7 +728,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         width={width}
         height={height}
         className="absolute top-0 left-0 touch-none"
-        style={{ cursor: getCanvasCursor(currentTool, selection?.isMoving) }}
+        style={{ cursor: getCanvasCursor(currentTool, selection?.isMoving), zIndex: 0 }}
         onPointerDown={startDrawing}
         onPointerMove={draw}
         onPointerUp={stopDrawing}
@@ -692,6 +750,8 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         <CanvasTextInput
           textInput={textInput}
           primaryColor={primaryColor}
+          backgroundMode={textBackgroundMode}
+          backgroundColor={textBackgroundColor}
           strokeSize={strokeSize}
           onChange={setTextInput}
           onCancel={() => setTextInput(null)}

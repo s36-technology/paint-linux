@@ -9,12 +9,15 @@ import CanvasWorkspace from './features/app/ui/CanvasWorkspace';
 import TitleBar from './features/app/ui/TitleBar';
 import { CurrentFile } from './features/app/model/types';
 import { useImageImport } from './features/app/model/useImageImport';
+import { TextBackgroundMode } from './features/canvas/model/types';
 
 export default function App() {
   const [currentTool, setCurrentTool] = useState<Tool>('pencil');
   const [primaryColor, setPrimaryColor] = useState<string>('#000000');
   const [secondaryColor, setSecondaryColor] = useState<string>('#ffffff');
   const [strokeSize, setStrokeSize] = useState<number>(3);
+  const [textBackgroundMode, setTextBackgroundMode] = useState<TextBackgroundMode>('transparent');
+  const [textBackgroundColor, setTextBackgroundColor] = useState<string>('#ffffff');
   const [canvasSize, setCanvasSize] = useState({ width: 1536, height: 960 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -476,6 +479,10 @@ export default function App() {
         setSecondaryColor={setSecondaryColor}
         strokeSize={strokeSize}
         setStrokeSize={setStrokeSize}
+        textBackgroundMode={textBackgroundMode}
+        setTextBackgroundMode={setTextBackgroundMode}
+        textBackgroundColor={textBackgroundColor}
+        setTextBackgroundColor={setTextBackgroundColor}
       />
 
       <CanvasWorkspace
@@ -490,6 +497,8 @@ export default function App() {
         pastedImage={pastedImage}
         primaryColor={primaryColor}
         secondaryColor={secondaryColor}
+        textBackgroundMode={textBackgroundMode}
+        textBackgroundColor={textBackgroundColor}
         showGridlines={showGridlines}
         showRulers={showRulers}
         showThumbnail={showThumbnail}

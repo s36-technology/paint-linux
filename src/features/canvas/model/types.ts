@@ -6,6 +6,8 @@ export interface Point {
   y: number;
 }
 
+export type TextBackgroundMode = 'transparent' | 'color';
+
 export interface CanvasProps {
   currentTool: Tool;
   setCurrentTool: (tool: Tool) => void;
@@ -20,6 +22,8 @@ export interface CanvasProps {
   pastedImage?: { src: string; id: number } | null;
   showRulers?: boolean;
   showGridlines?: boolean;
+  textBackgroundMode: TextBackgroundMode;
+  textBackgroundColor: string;
 }
 
 export interface CurveState {
@@ -33,6 +37,15 @@ export interface CurveState {
 export interface PolygonState {
   points: Point[];
   currentPos: Point;
+}
+
+export interface TextInputState extends Point {
+  text: string;
+  screenX: number;
+  screenY: number;
+  scale: number;
+  w: number;
+  h: number;
 }
 
 export interface SelectionState {

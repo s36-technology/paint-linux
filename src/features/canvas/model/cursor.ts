@@ -4,6 +4,8 @@ export function getCanvasCursor(tool: Tool, isSelectionMoving?: boolean) {
   if (tool === 'select' || tool === 'lasso-select') return isSelectionMoving ? 'move' : 'crosshair';
 
   switch (tool) {
+    case 'pointer':
+      return 'default';
     case 'text':
       return 'text';
     case 'eraser':

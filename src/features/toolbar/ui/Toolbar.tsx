@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Pencil, Eraser, PaintBucket, Type, Pipette, Search,
+  MousePointer2, Pencil, Eraser, PaintBucket, Type, Pipette, Search,
   Crop, Maximize, RotateCw,
   Minus, Square, Circle, Triangle,
   Brush, ChevronDown, Sparkles, Layers,
@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { Tool } from '../../../shared/types';
 import { t } from '../../../shared/i18n';
-import { DEFAULT_COLORS } from '../model/palette';
+import { TextBackgroundMode } from '../../canvas/model/types';
+import { DEFAULT_COLORS, TEXT_BACKGROUND_COLORS } from '../model/palette';
 import ToolBtn from './ToolButton';
 
 interface ToolbarProps {
@@ -21,21 +22,33 @@ interface ToolbarProps {
   setSecondaryColor: (c: string) => void;
   strokeSize: number;
   setStrokeSize: (s: number) => void;
+  textBackgroundMode: TextBackgroundMode;
+  setTextBackgroundMode: (mode: TextBackgroundMode) => void;
+  textBackgroundColor: string;
+  setTextBackgroundColor: (color: string) => void;
 }
 
 export default function Toolbar({
   currentTool, setCurrentTool,
   primaryColor, setPrimaryColor,
   secondaryColor, setSecondaryColor,
-  strokeSize, setStrokeSize
+  strokeSize, setStrokeSize,
+  textBackgroundMode, setTextBackgroundMode,
+  textBackgroundColor, setTextBackgroundColor
 }: ToolbarProps) {
   const brushesRef = React.useRef<HTMLButtonElement>(null);
   const brushesMenuRef = React.useRef<HTMLDivElement>(null);
   const sizeRef = React.useRef<HTMLButtonElement>(null);
   const sizeMenuRef = React.useRef<HTMLDivElement>(null);
+  const colorPickerRef = React.useRef<HTMLButtonElement>(null);
+  const colorPickerMenuRef = React.useRef<HTMLDivElement>(null);
+  const textColorRef = React.useRef<HTMLButtonElement>(null);
+  const textColorMenuRef = React.useRef<HTMLDivElement>(null);
   const [isBrushesOpen, setIsBrushesOpen] = React.useState(false);
   const [isSizeOpen, setIsSizeOpen] = React.useState(false);
   const [isSelectionOpen, setIsSelectionOpen] = React.useState(false);
+  const [isColorPickerOpen, setIsColorPickerOpen] = React.useState(false);
+  const [isTextColorOpen, setIsTextColorOpen] = React.useState(false);
   const selectionRef = React.useRef<HTMLButtonElement>(null);
   const selectionMenuRef = React.useRef<HTMLDivElement>(null);
   const [activeColorSlot, setActiveColorSlot] = React.useState<1 | 2>(1);
@@ -84,6 +97,14 @@ export default function Toolbar({
           (!sizeMenuRef.current || !sizeMenuRef.current.contains(target))) {
         setIsSizeOpen(false);
       }
+      if (colorPickerRef.current && !colorPickerRef.current.contains(target) &&
+          (!colorPickerMenuRef.current || !colorPickerMenuRef.current.contains(target))) {
+        setIsColorPickerOpen(false);
+      }
+      if (textColorRef.current && !textColorRef.current.contains(target) &&
+          (!textColorMenuRef.current || !textColorMenuRef.current.contains(target))) {
+        setIsTextColorOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside, true);
     return () => document.removeEventListener('mousedown', handleClickOutside, true);
@@ -100,16 +121,18 @@ export default function Toolbar({
     }
   };
 
-  const handleAddCustomColor = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newColor = e.target.value;
+  const handleCustomColorSelect = (newColor: string) => {
     if (activeColorSlot === 1) setPrimaryColor(newColor);
     else setSecondaryColor(newColor);
     
-    const newCustomColors = [...customColors];
-    newCustomColors.unshift(newColor);
-    newCustomColors.pop();
-    setCustomColors(newCustomColors);
-    localStorage.setItem('paint-custom-colors', JSON.stringify(newCustomColors));
+    if (!customColors.includes(newColor)) {
+      const newCustomColors = [...customColors];
+      newCustomColors.unshift(newColor);
+      newCustomColors.pop();
+      setCustomColors(newCustomColors);
+      localStorage.setItem('paint-custom-colors', JSON.stringify(newCustomColors));
+    }
+    setIsColorPickerOpen(false);
   };
 
   return (
@@ -187,7 +210,8 @@ export default function Toolbar({
 
       {/* Tools */}
       <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
-        <div className="grid grid-cols-3 gap-0.5 h-[60px] content-center">
+        <div className="grid grid-cols-4 gap-0.5 h-[60px] content-center">
+          <ToolBtn icon={<MousePointer2 size={16} strokeWidth={1.5}/>} active={currentTool==='pointer'} onClick={()=>setCurrentTool('pointer')} label="Pointer" />
           <ToolBtn icon={<Pencil size={16} strokeWidth={1.5}/>} active={currentTool==='pencil'} onClick={()=>setCurrentTool('pencil')} label={t('tool.pencil')} />
           <ToolBtn icon={<PaintBucket size={16} strokeWidth={1.5}/>} active={currentTool==='fill'} onClick={()=>setCurrentTool('fill')} label={t('tool.fill')} />
           <ToolBtn icon={<Type size={16} strokeWidth={1.5}/>} active={currentTool==='text'} onClick={()=>setCurrentTool('text')} label={t('tool.text')} />
@@ -301,7 +325,7 @@ export default function Toolbar({
       {/* Shapes */}
       <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
         <div className="flex gap-2 h-[60px] items-center">
-          <div className="grid grid-cols-7 gap-0.5 bg-[#1a1a1a] border border-white/10 rounded p-1 w-48 h-[52px] overflow-y-auto">
+          <div className="grid grid-cols-12 gap-1 bg-[#1a1a1a] border border-white/10 rounded p-1 w-[380px] h-[60px] overflow-hidden [&_button]:p-1 [&_svg]:h-4 [&_svg]:w-4">
             <ToolBtn icon={<Minus size={14}/>} active={currentTool==='line'} onClick={()=>setCurrentTool('line')} label={t('tool.line')} />
             <ToolBtn icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 19c4-4 4-10 14-10"/></svg>} active={currentTool==='curve'} onClick={()=>setCurrentTool('curve')} label={t('tool.curve')} />
             <ToolBtn icon={<Circle size={14}/>} active={currentTool==='circle'} onClick={()=>setCurrentTool('circle')} label={t('tool.circle')} />
@@ -376,15 +400,59 @@ export default function Toolbar({
           </div>
           
           <div className="flex flex-col gap-1 ml-1">
-            <label className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 cursor-pointer" title={t('ui.colors')}>
-               <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-purple-500 via-red-500 to-yellow-500"></div>
-               <input 
-                 type="color" 
-                 className="hidden" 
-                 value={activeColorSlot === 1 ? primaryColor : secondaryColor}
-                 onChange={handleAddCustomColor} 
-               />
-            </label>
+            <button
+              ref={colorPickerRef}
+              type="button"
+              className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 cursor-pointer"
+              title={t('ui.colors')}
+              onClick={() => {
+                setIsColorPickerOpen(prev => !prev);
+                setIsTextColorOpen(false);
+              }}
+            >
+              <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-purple-500 via-red-500 to-yellow-500"></div>
+            </button>
+            {isColorPickerOpen && colorPickerRef.current && (
+              <div
+                ref={colorPickerMenuRef}
+                className="fixed z-[120] w-52 rounded-md border border-[#404040] bg-[#2b2b2b] p-2 shadow-2xl"
+                style={{
+                  top: colorPickerRef.current.getBoundingClientRect().bottom + window.scrollY + 6,
+                  left: colorPickerRef.current.getBoundingClientRect().right + window.scrollX - 208,
+                }}
+              >
+                <div className="mb-2 text-[11px] text-gray-400">
+                  {activeColorSlot === 1 ? 'Primary color' : 'Secondary color'}
+                </div>
+                <div className="grid grid-cols-8 gap-1">
+                  {DEFAULT_COLORS.map((color, index) => (
+                    <button
+                      key={`${color}-${index}`}
+                      className={`h-5 w-5 rounded-sm border transition-transform hover:scale-110 ${(activeColorSlot === 1 ? primaryColor : secondaryColor).toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                      onClick={() => handleCustomColorSelect(color)}
+                    />
+                  ))}
+                </div>
+                {customColors.some(color => color !== 'transparent') && (
+                  <>
+                    <div className="my-2 h-px bg-white/10" />
+                    <div className="grid grid-cols-8 gap-1">
+                      {customColors.filter(color => color !== 'transparent').map((color, index) => (
+                        <button
+                          key={`custom-picker-${color}-${index}`}
+                          className={`h-5 w-5 rounded-sm border transition-transform hover:scale-110 ${(activeColorSlot === 1 ? primaryColor : secondaryColor).toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                          onClick={() => handleCustomColorSelect(color)}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <button 
               className="w-6 h-6 rounded border border-white/20 flex items-center justify-center hover:bg-white/10 text-gray-300 text-lg leading-none"
               title={t('ui.addColor')}
@@ -415,6 +483,82 @@ export default function Toolbar({
         </div>
         <span className="text-[11px] text-center mt-auto text-gray-400">{t('ui.layers')}</span>
       </div>
+
+      {/* Text */}
+      {currentTool === 'text' && (
+        <div className="flex flex-col h-full px-3 border-l border-r border-white/10 flex-shrink-0">
+          <div className="flex items-center gap-2 h-[60px]">
+            <div className="flex flex-col gap-1 text-xs">
+              <button
+                className={`px-2 py-1 rounded text-left ${textBackgroundMode === 'transparent' ? 'bg-[#4cc2ff] text-black' : 'bg-white/5 hover:bg-white/10 text-gray-300'}`}
+                onClick={() => setTextBackgroundMode('transparent')}
+              >
+                Transparent
+              </button>
+              <button
+                className={`px-2 py-1 rounded text-left ${textBackgroundMode === 'color' ? 'bg-[#4cc2ff] text-black' : 'bg-white/5 hover:bg-white/10 text-gray-300'}`}
+                onClick={() => setTextBackgroundMode('color')}
+              >
+                Background
+              </button>
+            </div>
+            <button
+              ref={textColorRef}
+              type="button"
+              className={`w-8 h-8 rounded border border-white/20 flex items-center justify-center cursor-pointer ${textBackgroundMode === 'color' ? 'hover:bg-white/10' : 'opacity-50'}`}
+              title="Text background color"
+              onClick={() => {
+                setIsTextColorOpen(prev => !prev);
+                setTextBackgroundMode('color');
+              }}
+            >
+              <span className="w-5 h-5 rounded-sm border border-white/20" style={{ backgroundColor: textBackgroundColor }} />
+            </button>
+            {isTextColorOpen && textColorRef.current && (
+              <div
+                ref={textColorMenuRef}
+                className="fixed z-[120] w-44 rounded-md border border-[#404040] bg-[#2b2b2b] p-2 shadow-2xl"
+                style={{
+                  top: textColorRef.current.getBoundingClientRect().bottom + window.scrollY + 6,
+                  left: textColorRef.current.getBoundingClientRect().right + window.scrollX - 176,
+                }}
+              >
+                <div className="grid grid-cols-5 gap-1">
+                  {[...TEXT_BACKGROUND_COLORS, ...DEFAULT_COLORS.slice(0, 20)].map((color, index) => (
+                    <button
+                      key={`${color}-${index}`}
+                      className={`h-6 w-6 rounded-sm border transition-transform hover:scale-110 ${textBackgroundColor.toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                      onClick={() => {
+                        setTextBackgroundColor(color);
+                        setTextBackgroundMode('color');
+                        setIsTextColorOpen(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-5 gap-1">
+              {TEXT_BACKGROUND_COLORS.map(color => (
+                <button
+                  key={color}
+                  className={`h-4 w-4 rounded-sm border transition-transform hover:scale-110 ${textBackgroundColor.toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                  onClick={() => {
+                    setTextBackgroundColor(color);
+                    setTextBackgroundMode('color');
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          <span className="text-[10px] text-center mt-1.5 leading-none text-gray-400">{t('tool.text')}</span>
+        </div>
+      )}
+
 
     </div>
   );
