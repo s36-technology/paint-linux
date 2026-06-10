@@ -4,7 +4,7 @@
   "homepage": "https://paint.app",
   "author": "Paint Team <info@paint.app>",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "main": "electron/main.cjs",
   "engines": {
@@ -18,7 +18,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "start": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "dist": "npm run build && electron-builder"
+    "dist": "vite build && electron-builder build --linux -p always"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
@@ -52,7 +52,8 @@
     "appId": "s36-technology.paint-linux",
     "productName": "Paint Linux",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "resources"
     },
     "files": [
       "dist/**/*",
@@ -61,9 +62,10 @@
     ],
     "linux": {
       "target": [
-        "deb"
+        "deb",
+        "snap"
       ],
-      "icon": "logo.svg",
+      "icon": "icons",
       "category": "Graphics",
       "maintainer": "Paint Team <info@paint.app>"
     },
