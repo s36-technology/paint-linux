@@ -23,7 +23,7 @@ export interface CanvasProps {
   showRulers?: boolean;
   showGridlines?: boolean;
   textBackgroundMode: TextBackgroundMode;
-  textBackgroundColor: string;
+  shapeBackgroundMode: TextBackgroundMode;
 }
 
 export interface CurveState {

@@ -28,7 +28,7 @@ interface CanvasWorkspaceProps {
   primaryColor: string;
   secondaryColor: string;
   textBackgroundMode: TextBackgroundMode;
-  textBackgroundColor: string;
+  shapeBackgroundMode: TextBackgroundMode;
   showGridlines: boolean;
   showRulers: boolean;
   showThumbnail: boolean;
@@ -74,7 +74,7 @@ export default function CanvasWorkspace({
   primaryColor,
   secondaryColor,
   textBackgroundMode,
-  textBackgroundColor,
+  shapeBackgroundMode,
   showGridlines,
   showRulers,
   showThumbnail,
@@ -147,7 +147,7 @@ export default function CanvasWorkspace({
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
               textBackgroundMode={textBackgroundMode}
-              textBackgroundColor={textBackgroundColor}
+              shapeBackgroundMode={shapeBackgroundMode}
               strokeSize={strokeSize}
               width={canvasSize.width}
               height={canvasSize.height}

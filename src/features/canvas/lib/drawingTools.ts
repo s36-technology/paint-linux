@@ -1,5 +1,5 @@
 import { Tool } from '../../../shared/types';
-import { Point } from '../model/types';
+import { Point, TextBackgroundMode } from '../model/types';
 
 const BRUSH_TOOLS: Tool[] = [
   'pencil',
@@ -98,10 +98,13 @@ export function drawShapePreview(
   currentPos: Point,
   strokeSize: number,
   primaryColor: string,
+  backgroundMode: TextBackgroundMode,
+  backgroundColor: string,
   shiftKey: boolean,
 ) {
   ctx.beginPath();
   ctx.strokeStyle = primaryColor;
+  ctx.fillStyle = backgroundColor;
   ctx.lineWidth = strokeSize;
 
   let w = currentPos.x - startPos.x;
@@ -194,7 +197,14 @@ export function drawShapePreview(
       break;
   }
 
+  if (backgroundMode === 'color' && isFillableShape(tool)) {
+    ctx.fill();
+  }
   ctx.stroke();
+}
+
+function isFillableShape(tool: Tool) {
+  return tool !== 'line';
 }
 
 function drawRegularPolygon(ctx: CanvasRenderingContext2D, drawX: number, drawY: number, w: number, h: number, points: number) {

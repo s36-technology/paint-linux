@@ -10,8 +10,34 @@ import {
 import { Tool } from '../../../shared/types';
 import { t } from '../../../shared/i18n';
 import { TextBackgroundMode } from '../../canvas/model/types';
-import { DEFAULT_COLORS, TEXT_BACKGROUND_COLORS } from '../model/palette';
+import { DEFAULT_COLORS } from '../model/palette';
 import ToolBtn from './ToolButton';
+
+const SHAPE_BACKGROUND_TOOLS: Tool[] = [
+  'line',
+  'curve',
+  'circle',
+  'rectangle',
+  'rounded-rectangle',
+  'polygon',
+  'triangle',
+  'right-triangle',
+  'diamond',
+  'pentagon',
+  'hexagon',
+  'arrow-right',
+  'arrow-left',
+  'arrow-up',
+  'arrow-down',
+  'star-4',
+  'star-5',
+  'star-6',
+  'callout-rounded',
+  'callout-oval',
+  'callout-cloud',
+  'heart',
+  'lightning',
+];
 
 interface ToolbarProps {
   currentTool: Tool;
@@ -24,8 +50,8 @@ interface ToolbarProps {
   setStrokeSize: (s: number) => void;
   textBackgroundMode: TextBackgroundMode;
   setTextBackgroundMode: (mode: TextBackgroundMode) => void;
-  textBackgroundColor: string;
-  setTextBackgroundColor: (color: string) => void;
+  shapeBackgroundMode: TextBackgroundMode;
+  setShapeBackgroundMode: (mode: TextBackgroundMode) => void;
 }
 
 export default function Toolbar({
@@ -34,7 +60,7 @@ export default function Toolbar({
   secondaryColor, setSecondaryColor,
   strokeSize, setStrokeSize,
   textBackgroundMode, setTextBackgroundMode,
-  textBackgroundColor, setTextBackgroundColor
+  shapeBackgroundMode, setShapeBackgroundMode
 }: ToolbarProps) {
   const brushesRef = React.useRef<HTMLButtonElement>(null);
   const brushesMenuRef = React.useRef<HTMLDivElement>(null);
@@ -42,16 +68,14 @@ export default function Toolbar({
   const sizeMenuRef = React.useRef<HTMLDivElement>(null);
   const colorPickerRef = React.useRef<HTMLButtonElement>(null);
   const colorPickerMenuRef = React.useRef<HTMLDivElement>(null);
-  const textColorRef = React.useRef<HTMLButtonElement>(null);
-  const textColorMenuRef = React.useRef<HTMLDivElement>(null);
   const [isBrushesOpen, setIsBrushesOpen] = React.useState(false);
   const [isSizeOpen, setIsSizeOpen] = React.useState(false);
   const [isSelectionOpen, setIsSelectionOpen] = React.useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = React.useState(false);
-  const [isTextColorOpen, setIsTextColorOpen] = React.useState(false);
   const selectionRef = React.useRef<HTMLButtonElement>(null);
   const selectionMenuRef = React.useRef<HTMLDivElement>(null);
   const [activeColorSlot, setActiveColorSlot] = React.useState<1 | 2>(1);
+  const isShapeBackgroundTool = SHAPE_BACKGROUND_TOOLS.includes(currentTool);
   const [customColors, setCustomColors] = React.useState<string[]>(() => {
     const saved = localStorage.getItem('paint-custom-colors');
     return saved ? JSON.parse(saved) : Array(10).fill('transparent');
@@ -100,10 +124,6 @@ export default function Toolbar({
       if (colorPickerRef.current && !colorPickerRef.current.contains(target) &&
           (!colorPickerMenuRef.current || !colorPickerMenuRef.current.contains(target))) {
         setIsColorPickerOpen(false);
-      }
-      if (textColorRef.current && !textColorRef.current.contains(target) &&
-          (!textColorMenuRef.current || !textColorMenuRef.current.contains(target))) {
-        setIsTextColorOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside, true);
@@ -407,7 +427,6 @@ export default function Toolbar({
               title={t('ui.colors')}
               onClick={() => {
                 setIsColorPickerOpen(prev => !prev);
-                setIsTextColorOpen(false);
               }}
             >
               <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-purple-500 via-red-500 to-yellow-500"></div>
@@ -484,78 +503,45 @@ export default function Toolbar({
         <span className="text-[11px] text-center mt-auto text-gray-400">{t('ui.layers')}</span>
       </div>
 
+      {/* Shape Background */}
+      {isShapeBackgroundTool && (
+        <div className="flex flex-col h-full px-3 border-l border-r border-white/10 flex-shrink-0">
+          <div className="flex items-center gap-2 h-[60px]">
+            <label className="flex h-8 items-center gap-2 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 hover:bg-white/10">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 accent-[#4cc2ff]"
+                checked={shapeBackgroundMode === 'color'}
+                onChange={(e) => {
+                  setShapeBackgroundMode(e.target.checked ? 'color' : 'transparent');
+                  if (e.target.checked) setActiveColorSlot(2);
+                }}
+              />
+              Background
+            </label>
+          </div>
+          <span className="text-[11px] text-center mt-auto text-gray-400">Advance</span>
+        </div>
+      )}
+
       {/* Text */}
       {currentTool === 'text' && (
         <div className="flex flex-col h-full px-3 border-l border-r border-white/10 flex-shrink-0">
           <div className="flex items-center gap-2 h-[60px]">
-            <div className="flex flex-col gap-1 text-xs">
-              <button
-                className={`px-2 py-1 rounded text-left ${textBackgroundMode === 'transparent' ? 'bg-[#4cc2ff] text-black' : 'bg-white/5 hover:bg-white/10 text-gray-300'}`}
-                onClick={() => setTextBackgroundMode('transparent')}
-              >
-                Transparent
-              </button>
-              <button
-                className={`px-2 py-1 rounded text-left ${textBackgroundMode === 'color' ? 'bg-[#4cc2ff] text-black' : 'bg-white/5 hover:bg-white/10 text-gray-300'}`}
-                onClick={() => setTextBackgroundMode('color')}
-              >
-                Background
-              </button>
-            </div>
-            <button
-              ref={textColorRef}
-              type="button"
-              className={`w-8 h-8 rounded border border-white/20 flex items-center justify-center cursor-pointer ${textBackgroundMode === 'color' ? 'hover:bg-white/10' : 'opacity-50'}`}
-              title="Text background color"
-              onClick={() => {
-                setIsTextColorOpen(prev => !prev);
-                setTextBackgroundMode('color');
-              }}
-            >
-              <span className="w-5 h-5 rounded-sm border border-white/20" style={{ backgroundColor: textBackgroundColor }} />
-            </button>
-            {isTextColorOpen && textColorRef.current && (
-              <div
-                ref={textColorMenuRef}
-                className="fixed z-[120] w-44 rounded-md border border-[#404040] bg-[#2b2b2b] p-2 shadow-2xl"
-                style={{
-                  top: textColorRef.current.getBoundingClientRect().bottom + window.scrollY + 6,
-                  left: textColorRef.current.getBoundingClientRect().right + window.scrollX - 176,
+            <label className="flex h-8 items-center gap-2 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 hover:bg-white/10">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 accent-[#4cc2ff]"
+                checked={textBackgroundMode === 'color'}
+                onChange={(e) => {
+                  setTextBackgroundMode(e.target.checked ? 'color' : 'transparent');
+                  if (e.target.checked) setActiveColorSlot(2);
                 }}
-              >
-                <div className="grid grid-cols-5 gap-1">
-                  {[...TEXT_BACKGROUND_COLORS, ...DEFAULT_COLORS.slice(0, 20)].map((color, index) => (
-                    <button
-                      key={`${color}-${index}`}
-                      className={`h-6 w-6 rounded-sm border transition-transform hover:scale-110 ${textBackgroundColor.toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                      onClick={() => {
-                        setTextBackgroundColor(color);
-                        setTextBackgroundMode('color');
-                        setIsTextColorOpen(false);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-5 gap-1">
-              {TEXT_BACKGROUND_COLORS.map(color => (
-                <button
-                  key={color}
-                  className={`h-4 w-4 rounded-sm border transition-transform hover:scale-110 ${textBackgroundColor.toLowerCase() === color ? 'border-[#4cc2ff]' : 'border-white/20'}`}
-                  style={{ backgroundColor: color }}
-                  title={color}
-                  onClick={() => {
-                    setTextBackgroundColor(color);
-                    setTextBackgroundMode('color');
-                  }}
-                />
-              ))}
-            </div>
+              />
+              Background
+            </label>
           </div>
-          <span className="text-[10px] text-center mt-1.5 leading-none text-gray-400">{t('tool.text')}</span>
+          <span className="text-[11px] text-center mt-auto text-gray-400">Advance</span>
         </div>
       )}
 

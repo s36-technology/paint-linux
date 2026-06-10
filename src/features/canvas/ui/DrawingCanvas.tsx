@@ -10,7 +10,18 @@ import CanvasRulers from './CanvasRulers';
 import CanvasTextInput from './CanvasTextInput';
 import SelectionContextMenu from './SelectionContextMenu';
 
-export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines, textBackgroundMode, textBackgroundColor }: CanvasProps) {
+const moveSelectionBy = (selection: SelectionState, dx: number, dy: number): SelectionState => ({
+  ...selection,
+  x: selection.x + dx,
+  y: selection.y + dy,
+  startX: selection.startX + dx,
+  startY: selection.startY + dy,
+  startOriginX: selection.startOriginX === undefined ? undefined : selection.startOriginX + dx,
+  startOriginY: selection.startOriginY === undefined ? undefined : selection.startOriginY + dy,
+  path: selection.path?.map(point => ({ x: point.x + dx, y: point.y + dy })),
+});
+
+export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines, textBackgroundMode, shapeBackgroundMode }: CanvasProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<Point | null>(null);
   const [snapshot, setSnapshot] = useState<ImageData | null>(null);
@@ -189,6 +200,49 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
     if (ctx) drawSelectionOverlay(ctx, selection, width, height);
   }, [selection, width, height]);
 
+  useEffect(() => {
+    const handleSelectionKeyDown = (e: KeyboardEvent) => {
+      const activeElement = document.activeElement;
+      const activeTag = activeElement?.tagName.toLowerCase();
+      if (
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        activeTag === 'select' ||
+        (activeElement instanceof HTMLElement && activeElement.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.altKey || e.ctrlKey || e.metaKey || !selection?.active || selection.isResizing) return;
+
+      const step = e.shiftKey ? 15 : 3;
+      const movement = {
+        ArrowUp: { dx: 0, dy: -step },
+        ArrowDown: { dx: 0, dy: step },
+        ArrowLeft: { dx: -step, dy: 0 },
+        ArrowRight: { dx: step, dy: 0 },
+      }[e.key];
+
+      if (!movement) return;
+
+      e.preventDefault();
+      setContextMenu(null);
+
+      if (!selection.image) {
+        const image = extractSelection(true);
+        if (!image) return;
+
+        setSelection(prev => (prev ? moveSelectionBy({ ...prev, image }, movement.dx, movement.dy) : prev));
+        return;
+      }
+
+      setSelection(prev => (prev ? moveSelectionBy(prev, movement.dx, movement.dy) : prev));
+    };
+
+    window.addEventListener('keydown', handleSelectionKeyDown);
+    return () => window.removeEventListener('keydown', handleSelectionKeyDown);
+  }, [selection, extractSelection]);
+
   const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (currentTool !== 'text' && currentTool !== 'pointer') {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -290,6 +344,10 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
               ctx.lineTo(polygonState.points[i].x, polygonState.points[i].y);
             }
             ctx.closePath();
+            if (shapeBackgroundMode === 'color') {
+              ctx.fillStyle = secondaryColor;
+              ctx.fill();
+            }
             ctx.strokeStyle = primaryColor;
             ctx.lineWidth = strokeSize;
             ctx.stroke();
@@ -433,13 +491,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
       } else if (selection?.isMoving && selection.image) {
         const dx = x - selection.startX;
         const dy = y - selection.startY;
-        setSelection(prev => prev ? {
-          ...prev,
-          x: prev.x + dx,
-          y: prev.y + dy,
-          startX: x,
-          startY: y
-        } : null);
+        setSelection(prev => prev ? moveSelectionBy(prev, dx, dy) : null);
       } else if (isDrawing && selection && !selection.active && startPos) {
         if (currentTool === 'lasso-select') {
           setSelection(prev => prev && prev.path ? {
@@ -524,7 +576,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
       applyBrushStroke(ctx, currentTool, { x, y }, primaryColor, secondaryColor, strokeSize);
     } else if (snapshot && isShapeTool(currentTool)) {
       ctx.putImageData(snapshot, 0, 0);
-      drawShapePreview(ctx, currentTool, startPos, { x, y }, strokeSize, primaryColor, e.shiftKey);
+      drawShapePreview(ctx, currentTool, startPos, { x, y }, strokeSize, primaryColor, shapeBackgroundMode, secondaryColor, e.shiftKey);
     }
   };
 
@@ -659,7 +711,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         ctx.rect(textInput.x, textInput.y, textInput.w, textInput.h);
         ctx.clip();
         if (textBackgroundMode === 'color') {
-          ctx.fillStyle = textBackgroundColor;
+          ctx.fillStyle = secondaryColor;
           ctx.fillRect(textInput.x, textInput.y, textInput.w, textInput.h);
         }
         ctx.font = `${fontSize}px Arial`;
@@ -712,6 +764,10 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         ctx.lineTo(polygonState.points[i].x, polygonState.points[i].y);
       }
       ctx.closePath();
+      if (shapeBackgroundMode === 'color') {
+        ctx.fillStyle = secondaryColor;
+        ctx.fill();
+      }
       ctx.strokeStyle = primaryColor;
       ctx.lineWidth = strokeSize;
       ctx.stroke();
@@ -751,7 +807,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
           textInput={textInput}
           primaryColor={primaryColor}
           backgroundMode={textBackgroundMode}
-          backgroundColor={textBackgroundColor}
+          backgroundColor={secondaryColor}
           strokeSize={strokeSize}
           onChange={setTextInput}
           onCancel={() => setTextInput(null)}

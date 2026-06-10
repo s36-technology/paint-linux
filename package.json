@@ -65,7 +65,7 @@
         "deb",
         "snap"
       ],
-      "icon": "icons",
+      "icon": "resources/icons/512x512.png",
       "category": "Graphics",
       "maintainer": "Paint Team <info@paint.app>"
     },

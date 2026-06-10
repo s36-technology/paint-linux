@@ -17,7 +17,7 @@ export default function App() {
   const [secondaryColor, setSecondaryColor] = useState<string>('#ffffff');
   const [strokeSize, setStrokeSize] = useState<number>(3);
   const [textBackgroundMode, setTextBackgroundMode] = useState<TextBackgroundMode>('transparent');
-  const [textBackgroundColor, setTextBackgroundColor] = useState<string>('#ffffff');
+  const [shapeBackgroundMode, setShapeBackgroundMode] = useState<TextBackgroundMode>('transparent');
   const [canvasSize, setCanvasSize] = useState({ width: 1536, height: 960 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -481,8 +481,8 @@ export default function App() {
         setStrokeSize={setStrokeSize}
         textBackgroundMode={textBackgroundMode}
         setTextBackgroundMode={setTextBackgroundMode}
-        textBackgroundColor={textBackgroundColor}
-        setTextBackgroundColor={setTextBackgroundColor}
+        shapeBackgroundMode={shapeBackgroundMode}
+        setShapeBackgroundMode={setShapeBackgroundMode}
       />
 
       <CanvasWorkspace
@@ -498,7 +498,7 @@ export default function App() {
         primaryColor={primaryColor}
         secondaryColor={secondaryColor}
         textBackgroundMode={textBackgroundMode}
-        textBackgroundColor={textBackgroundColor}
+        shapeBackgroundMode={shapeBackgroundMode}
         showGridlines={showGridlines}
         showRulers={showRulers}
         showThumbnail={showThumbnail}
