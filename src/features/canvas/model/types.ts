@@ -8,6 +8,24 @@ export interface Point {
 
 export type TextBackgroundMode = 'transparent' | 'color';
 
+export interface TextStyle {
+  fontFamily: string;
+  fontSize: number;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
+export interface StyledTextRun {
+  text: string;
+  color: string;
+  fontFamily: string;
+  fontSize: number;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+}
+
 export interface CanvasProps {
   currentTool: Tool;
   setCurrentTool: (tool: Tool) => void;
@@ -24,6 +42,7 @@ export interface CanvasProps {
   showGridlines?: boolean;
   textBackgroundMode: TextBackgroundMode;
   shapeBackgroundMode: TextBackgroundMode;
+  textStyle: TextStyle;
 }
 
 export interface CurveState {
@@ -40,7 +59,7 @@ export interface PolygonState {
 }
 
 export interface TextInputState extends Point {
-  text: string;
+  html: string;
   screenX: number;
   screenY: number;
   scale: number;

@@ -19,6 +19,7 @@ const SHAPE_TOOLS: Tool[] = [
   'rectangle',
   'circle',
   'line',
+  'arrow',
   'rounded-rectangle',
   'triangle',
   'right-triangle',
@@ -131,6 +132,9 @@ export function drawShapePreview(
       ctx.moveTo(drawX, drawY);
       ctx.lineTo(drawX + w, drawY + h);
       break;
+    case 'arrow':
+      drawArrowLine(ctx, drawX, drawY, drawX + w, drawY + h, strokeSize);
+      break;
     case 'rectangle':
       ctx.rect(drawX, drawY, w, h);
       break;
@@ -204,7 +208,29 @@ export function drawShapePreview(
 }
 
 function isFillableShape(tool: Tool) {
-  return tool !== 'line';
+  return tool !== 'line' && tool !== 'arrow';
+}
+
+function drawArrowLine(ctx: CanvasRenderingContext2D, startX: number, startY: number, endX: number, endY: number, strokeSize: number) {
+  const angle = Math.atan2(endY - startY, endX - startX);
+  const length = Math.hypot(endX - startX, endY - startY);
+  const headLength = Math.min(Math.max(strokeSize * 5, 12), Math.max(length * 0.45, 1));
+
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
+
+  if (length < 2) return;
+
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(
+    endX - headLength * Math.cos(angle - Math.PI / 6),
+    endY - headLength * Math.sin(angle - Math.PI / 6),
+  );
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(
+    endX - headLength * Math.cos(angle + Math.PI / 6),
+    endY - headLength * Math.sin(angle + Math.PI / 6),
+  );
 }
 
 function drawRegularPolygon(ctx: CanvasRenderingContext2D, drawX: number, drawY: number, w: number, h: number, points: number) {

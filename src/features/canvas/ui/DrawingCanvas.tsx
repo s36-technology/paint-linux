@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CanvasProps, CurveState, Point, PolygonState, SelectionState, TextInputState } from '../model/types';
+import { CanvasProps, CurveState, Point, PolygonState, SelectionState, StyledTextRun, TextInputState } from '../model/types';
 import { getCanvasCursor } from '../model/cursor';
 import { floodFill, hexToRgb } from '../lib/canvasPixels';
 import { applyBrushStroke, drawShapePreview, isBrushTool, isShapeTool } from '../lib/drawingTools';
@@ -21,7 +21,7 @@ const moveSelectionBy = (selection: SelectionState, dx: number, dy: number): Sel
   path: selection.path?.map(point => ({ x: point.x + dx, y: point.y + dy })),
 });
 
-export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines, textBackgroundMode, shapeBackgroundMode }: CanvasProps) {
+export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColor, secondaryColor, strokeSize, width, height, canvasRef, onDraw, onColorPick, pastedImage, showRulers, showGridlines, textBackgroundMode, shapeBackgroundMode, textStyle }: CanvasProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<Point | null>(null);
   const [snapshot, setSnapshot] = useState<ImageData | null>(null);
@@ -299,7 +299,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         commitTextInput();
       }
       const screenScale = rect.width / canvas.width;
-      const textFontSize = Math.max(16, strokeSize * 4);
+      const textFontSize = textStyle.fontSize;
       const textPadding = 4;
       setTextInput({
         x,
@@ -309,7 +309,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
         scale: screenScale,
         w: 240 / screenScale,
         h: textFontSize * 1.2 + textPadding * 2,
-        text: '',
+        html: '',
       });
       return;
     }
@@ -702,8 +702,8 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
 
 
   const commitTextInput = () => {
-    if (textInput?.text.trim() && canvasRef.current) {
-      const fontSize = Math.max(16, strokeSize * 4);
+    if (textInput && getPlainTextFromHtml(textInput.html).trim() && canvasRef.current) {
+      const fontSize = textStyle.fontSize;
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) {
         ctx.save();
@@ -714,14 +714,21 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
           ctx.fillStyle = secondaryColor;
           ctx.fillRect(textInput.x, textInput.y, textInput.w, textInput.h);
         }
-        ctx.font = `${fontSize}px Arial`;
-        ctx.fillStyle = primaryColor;
         ctx.textBaseline = 'top';
         const padding = 4;
         const maxTextWidth = Math.max(1, textInput.w - padding * 2);
-        wrapCanvasText(ctx, textInput.text, maxTextWidth).forEach((line, i) => {
-          ctx.fillText(line, textInput.x + padding, textInput.y + padding + i * (fontSize * 1.2));
-        });
+        drawStyledTextRuns(
+          ctx,
+          parseStyledTextRuns(textInput.html, {
+            ...textStyle,
+            text: '',
+            color: primaryColor,
+          }),
+          textInput.x + padding,
+          textInput.y + padding,
+          maxTextWidth,
+          fontSize,
+        );
         ctx.restore();
         onDraw(canvasRef.current.toDataURL());
       }
@@ -729,24 +736,114 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
     setTextInput(null);
   };
 
-  const wrapCanvasText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
-    return text.split('\n').flatMap(paragraph => {
-      const words = paragraph.split(/\s+/);
-      const lines: string[] = [];
-      let line = '';
+  const formatCanvasFontFamily = (fontFamily: string) => fontFamily.includes(' ') ? `"${fontFamily}"` : fontFamily;
 
-      words.forEach(word => {
-        const testLine = line ? `${line} ${word}` : word;
-        if (ctx.measureText(testLine).width > maxWidth && line) {
-          lines.push(line);
-          line = word;
-        } else {
-          line = testLine;
+  const getRunFont = (run: StyledTextRun) => `${run.italic ? 'italic ' : ''}${run.bold ? '700 ' : ''}${run.fontSize}px ${formatCanvasFontFamily(run.fontFamily)}`;
+
+  const getPlainTextFromHtml = (html: string) => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || '';
+  };
+
+  const parseStyledTextRuns = (html: string, baseStyle: StyledTextRun): StyledTextRun[] => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const runs: StyledTextRun[] = [];
+
+    const readStyle = (node: Node, inherited: StyledTextRun): StyledTextRun => {
+      if (!(node instanceof HTMLElement)) return inherited;
+      const style = node.style;
+      const tag = node.tagName.toLowerCase();
+      return {
+        ...inherited,
+        color: style.color || node.getAttribute('color') || inherited.color,
+        fontFamily: style.fontFamily?.replaceAll('"', '') || node.getAttribute('face') || inherited.fontFamily,
+        fontSize: style.fontSize ? Number.parseFloat(style.fontSize) : inherited.fontSize,
+        bold: inherited.bold || tag === 'b' || tag === 'strong' || style.fontWeight === 'bold' || Number(style.fontWeight) >= 600,
+        italic: inherited.italic || tag === 'i' || tag === 'em' || style.fontStyle === 'italic',
+        underline: inherited.underline || tag === 'u' || style.textDecoration.includes('underline'),
+      };
+    };
+
+    const pushNewLine = (style: StyledTextRun) => {
+      const lastRun = runs[runs.length - 1];
+      if (!lastRun || lastRun.text.endsWith('\n')) return;
+      runs.push({ ...style, text: '\n' });
+    };
+
+    const walk = (node: Node, style: StyledTextRun) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        runs.push({ ...style, text: node.textContent || '' });
+        return;
+      }
+      if (node instanceof HTMLBRElement) {
+        pushNewLine(style);
+        return;
+      }
+      const nextStyle = readStyle(node, style);
+      if (node instanceof HTMLDivElement || node instanceof HTMLParagraphElement) {
+        pushNewLine(nextStyle);
+      }
+      node.childNodes.forEach(child => walk(child, nextStyle));
+    };
+
+    div.childNodes.forEach(child => walk(child, baseStyle));
+    return runs;
+  };
+
+  const drawStyledTextRuns = (
+    ctx: CanvasRenderingContext2D,
+    runs: StyledTextRun[],
+    startX: number,
+    startY: number,
+    maxWidth: number,
+    fallbackFontSize: number,
+  ) => {
+    let x = startX;
+    let y = startY;
+    let lineHeight = fallbackFontSize * 1.2;
+
+    const drawRunText = (text: string, run: StyledTextRun) => {
+      ctx.font = getRunFont(run);
+      ctx.fillStyle = run.color;
+      const width = ctx.measureText(text).width;
+
+      ctx.fillText(text, x, y);
+      if (run.underline && text.trim()) {
+        const underlineY = y + run.fontSize * 1.08;
+        ctx.beginPath();
+        ctx.moveTo(x, underlineY);
+        ctx.lineTo(x + width, underlineY);
+        ctx.lineWidth = Math.max(1, run.fontSize / 16);
+        ctx.strokeStyle = run.color;
+        ctx.stroke();
+      }
+
+      x += width;
+      lineHeight = Math.max(lineHeight, run.fontSize * 1.2);
+    };
+
+    runs.forEach(run => {
+      const parts = run.text.split(/(\s+|\n)/);
+      parts.forEach(part => {
+        if (!part) return;
+        if (part.includes('\n')) {
+          x = startX;
+          y += lineHeight;
+          lineHeight = fallbackFontSize * 1.2;
+          return;
         }
-      });
 
-      lines.push(line);
-      return lines;
+        ctx.font = getRunFont(run);
+        const width = ctx.measureText(part).width;
+        if (x > startX && x + width > startX + maxWidth) {
+          x = startX;
+          y += lineHeight;
+          lineHeight = fallbackFontSize * 1.2;
+        }
+        drawRunText(part, run);
+      });
     });
   };
 
@@ -808,7 +905,7 @@ export default function DrawingCanvas({ currentTool, setCurrentTool, primaryColo
           primaryColor={primaryColor}
           backgroundMode={textBackgroundMode}
           backgroundColor={secondaryColor}
-          strokeSize={strokeSize}
+          textStyle={textStyle}
           onChange={setTextInput}
           onCancel={() => setTextInput(null)}
           onCommit={commitTextInput}

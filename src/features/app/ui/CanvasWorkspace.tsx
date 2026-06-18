@@ -1,6 +1,6 @@
 import React from 'react';
 import DrawingCanvas from '../../canvas/ui/DrawingCanvas';
-import { TextBackgroundMode } from '../../canvas/model/types';
+import { TextBackgroundMode, TextStyle } from '../../canvas/model/types';
 import { Tool } from '../../../shared/types';
 import { CanvasSize, Point } from '../model/types';
 import StrokeSizeSlider from './StrokeSizeSlider';
@@ -29,6 +29,7 @@ interface CanvasWorkspaceProps {
   secondaryColor: string;
   textBackgroundMode: TextBackgroundMode;
   shapeBackgroundMode: TextBackgroundMode;
+  textStyle: TextStyle;
   showGridlines: boolean;
   showRulers: boolean;
   showThumbnail: boolean;
@@ -75,6 +76,7 @@ export default function CanvasWorkspace({
   secondaryColor,
   textBackgroundMode,
   shapeBackgroundMode,
+  textStyle,
   showGridlines,
   showRulers,
   showThumbnail,
@@ -148,6 +150,7 @@ export default function CanvasWorkspace({
               secondaryColor={secondaryColor}
               textBackgroundMode={textBackgroundMode}
               shapeBackgroundMode={shapeBackgroundMode}
+              textStyle={textStyle}
               strokeSize={strokeSize}
               width={canvasSize.width}
               height={canvasSize.height}

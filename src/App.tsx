@@ -9,7 +9,7 @@ import CanvasWorkspace from './features/app/ui/CanvasWorkspace';
 import TitleBar from './features/app/ui/TitleBar';
 import { CurrentFile } from './features/app/model/types';
 import { useImageImport } from './features/app/model/useImageImport';
-import { TextBackgroundMode } from './features/canvas/model/types';
+import { TextBackgroundMode, TextStyle } from './features/canvas/model/types';
 
 export default function App() {
   const [currentTool, setCurrentTool] = useState<Tool>('pencil');
@@ -18,6 +18,13 @@ export default function App() {
   const [strokeSize, setStrokeSize] = useState<number>(3);
   const [textBackgroundMode, setTextBackgroundMode] = useState<TextBackgroundMode>('transparent');
   const [shapeBackgroundMode, setShapeBackgroundMode] = useState<TextBackgroundMode>('transparent');
+  const [textStyle, setTextStyle] = useState<TextStyle>({
+    fontFamily: 'Arial',
+    fontSize: 24,
+    bold: false,
+    italic: false,
+    underline: false,
+  });
   const [canvasSize, setCanvasSize] = useState({ width: 1536, height: 960 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -483,6 +490,8 @@ export default function App() {
         setTextBackgroundMode={setTextBackgroundMode}
         shapeBackgroundMode={shapeBackgroundMode}
         setShapeBackgroundMode={setShapeBackgroundMode}
+        textStyle={textStyle}
+        setTextStyle={setTextStyle}
       />
 
       <CanvasWorkspace
@@ -499,6 +508,7 @@ export default function App() {
         secondaryColor={secondaryColor}
         textBackgroundMode={textBackgroundMode}
         shapeBackgroundMode={shapeBackgroundMode}
+        textStyle={textStyle}
         showGridlines={showGridlines}
         showRulers={showRulers}
         showThumbnail={showThumbnail}

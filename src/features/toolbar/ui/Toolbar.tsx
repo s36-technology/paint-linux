@@ -5,11 +5,12 @@ import {
   Minus, Square, Circle, Triangle,
   Brush, ChevronDown, Sparkles, Layers,
   SquareDashed, Hexagon, Pentagon, Diamond, Star, MessageCircle,
-  LassoSelect, Maximize2, Trash2, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Heart, Zap, Cloud
+  LassoSelect, Maximize2, Trash2, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, ArrowUpRight, Heart, Zap, Cloud,
+  Bold, Italic, Underline
 } from 'lucide-react';
 import { Tool } from '../../../shared/types';
 import { t } from '../../../shared/i18n';
-import { TextBackgroundMode } from '../../canvas/model/types';
+import { TextBackgroundMode, TextStyle } from '../../canvas/model/types';
 import { DEFAULT_COLORS } from '../model/palette';
 import ToolBtn from './ToolButton';
 
@@ -52,6 +53,8 @@ interface ToolbarProps {
   setTextBackgroundMode: (mode: TextBackgroundMode) => void;
   shapeBackgroundMode: TextBackgroundMode;
   setShapeBackgroundMode: (mode: TextBackgroundMode) => void;
+  textStyle: TextStyle;
+  setTextStyle: React.Dispatch<React.SetStateAction<TextStyle>>;
 }
 
 export default function Toolbar({
@@ -60,7 +63,8 @@ export default function Toolbar({
   secondaryColor, setSecondaryColor,
   strokeSize, setStrokeSize,
   textBackgroundMode, setTextBackgroundMode,
-  shapeBackgroundMode, setShapeBackgroundMode
+  shapeBackgroundMode, setShapeBackgroundMode,
+  textStyle, setTextStyle
 }: ToolbarProps) {
   const brushesRef = React.useRef<HTMLButtonElement>(null);
   const brushesMenuRef = React.useRef<HTMLDivElement>(null);
@@ -72,6 +76,7 @@ export default function Toolbar({
   const [isSizeOpen, setIsSizeOpen] = React.useState(false);
   const [isSelectionOpen, setIsSelectionOpen] = React.useState(false);
   const [isColorPickerOpen, setIsColorPickerOpen] = React.useState(false);
+  const [hasActiveTextSelection, setHasActiveTextSelection] = React.useState(false);
   const selectionRef = React.useRef<HTMLButtonElement>(null);
   const selectionMenuRef = React.useRef<HTMLDivElement>(null);
   const [activeColorSlot, setActiveColorSlot] = React.useState<1 | 2>(1);
@@ -88,6 +93,18 @@ export default function Toolbar({
       setActiveColorSlot(1);
     }
   }, [currentTool]);
+
+  React.useEffect(() => {
+    if (currentTool !== 'text') setHasActiveTextSelection(false);
+  }, [currentTool]);
+
+  React.useEffect(() => {
+    const handleTextSelectionChange = (e: Event) => {
+      setHasActiveTextSelection(Boolean((e as CustomEvent<{ hasSelection: boolean }>).detail?.hasSelection));
+    };
+    window.addEventListener('text-selection-change', handleTextSelectionChange);
+    return () => window.removeEventListener('text-selection-change', handleTextSelectionChange);
+  }, []);
 
   React.useEffect(() => {
     const handleAddColor = (e: Event) => {
@@ -136,12 +153,21 @@ export default function Toolbar({
       setSecondaryColor(c);
       setActiveColorSlot(2);
     } else {
+      if (currentTool === 'text' && activeColorSlot === 1 && hasActiveTextSelection) {
+        dispatchTextStyle('foreColor', c);
+        return;
+      }
       if (activeColorSlot === 1) setPrimaryColor(c);
       else setSecondaryColor(c);
     }
   };
 
   const handleCustomColorSelect = (newColor: string) => {
+    if (currentTool === 'text' && activeColorSlot === 1 && hasActiveTextSelection) {
+      dispatchTextStyle('foreColor', newColor);
+      setIsColorPickerOpen(false);
+      return;
+    }
     if (activeColorSlot === 1) setPrimaryColor(newColor);
     else setSecondaryColor(newColor);
     
@@ -155,12 +181,16 @@ export default function Toolbar({
     setIsColorPickerOpen(false);
   };
 
+  const dispatchTextStyle = (command: string, value?: string | number) => {
+    window.dispatchEvent(new CustomEvent('apply-text-style', { detail: { command, value } }));
+  };
+
   return (
-    <div className="h-28 bg-[#202020] border-b border-black/40 flex items-start px-2 py-2 gap-1 shadow-sm z-50 relative text-gray-300 select-none overflow-x-auto overflow-y-hidden flex-shrink-0">
+    <div className="h-32 bg-[#202020] border-b border-black/40 flex items-start px-1.5 py-2 gap-0.5 shadow-sm z-50 relative text-gray-300 select-none overflow-x-auto overflow-y-hidden flex-shrink-0">
 
       {/* Selection */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 relative flex-shrink-0">
-        <div className="flex items-center h-[60px]">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 relative flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center">
           <button
             ref={selectionRef}
             className={`flex flex-col items-center justify-center gap-1 p-2 rounded w-14 h-14 ${['select', 'lasso-select'].includes(currentTool) || isSelectionOpen ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-300'}`}
@@ -217,20 +247,20 @@ export default function Toolbar({
       </div>
 
       {/* Image */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
-        <div className="flex gap-1 h-[60px] items-center">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center gap-1">
           <div className="flex flex-col justify-center gap-0.5">
-            <button onClick={() => window.dispatchEvent(new CustomEvent('request-crop'))} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><Crop size={14}/> {t('action.crop')}</button>
-            <button onClick={() => window.dispatchEvent(new CustomEvent('request-resize'))} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><Maximize size={14}/> {t('action.resize')}</button>
-            <button onClick={() => window.dispatchEvent(new CustomEvent('request-rotate'))} className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><RotateCw size={14}/> {t('action.rotate')}</button>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('request-crop'))} className="flex items-center gap-1.5 px-1.5 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><Crop size={14}/> {t('action.crop')}</button>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('request-resize'))} className="flex items-center gap-1.5 px-1.5 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><Maximize size={14}/> {t('action.resize')}</button>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('request-rotate'))} className="flex items-center gap-1.5 px-1.5 py-1 hover:bg-white/5 rounded text-gray-300 text-xs"><RotateCw size={14}/> {t('action.rotate')}</button>
           </div>
         </div>
         <span className="text-[11px] text-center mt-auto text-gray-400">{t('menu.image')}</span>
       </div>
 
       {/* Tools */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
-        <div className="grid grid-cols-4 gap-0.5 h-[60px] content-center">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 flex-shrink-0">
+        <div className="grid flex-1 grid-cols-4 content-center gap-0.5">
           <ToolBtn icon={<MousePointer2 size={16} strokeWidth={1.5}/>} active={currentTool==='pointer'} onClick={()=>setCurrentTool('pointer')} label="Pointer" />
           <ToolBtn icon={<Pencil size={16} strokeWidth={1.5}/>} active={currentTool==='pencil'} onClick={()=>setCurrentTool('pencil')} label={t('tool.pencil')} />
           <ToolBtn icon={<PaintBucket size={16} strokeWidth={1.5}/>} active={currentTool==='fill'} onClick={()=>setCurrentTool('fill')} label={t('tool.fill')} />
@@ -238,13 +268,14 @@ export default function Toolbar({
           <ToolBtn icon={<Eraser size={16} strokeWidth={1.5}/>} active={currentTool==='eraser'} onClick={()=>setCurrentTool('eraser')} label={t('tool.eraser')} />
           <ToolBtn icon={<Pipette size={16} strokeWidth={1.5}/>} active={currentTool==='picker'} onClick={()=>setCurrentTool('picker')} label={t('tool.picker')} />
           <ToolBtn icon={<Search size={16} strokeWidth={1.5}/>} active={currentTool==='magnifier'} onClick={()=>setCurrentTool('magnifier')} label={t('tool.magnifier')} />
+          <ToolBtn icon={<ArrowUpRight size={16} strokeWidth={1.5}/>} active={currentTool==='arrow'} onClick={()=>setCurrentTool('arrow')} label={t('tool.arrow')} />
         </div>
         <span className="text-[11px] text-center mt-auto text-gray-400">{t('ui.tools')}</span>
       </div>
 
       {/* Brushes */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 relative flex-shrink-0">
-        <div className="flex items-center h-[60px]">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 relative flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center">
           <button
             ref={brushesRef}
             className={`flex flex-col items-center justify-center gap-1 p-2 rounded w-14 h-14 ${currentTool === 'brush' || isBrushesOpen ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-300'}`}
@@ -297,8 +328,8 @@ export default function Toolbar({
       </div>
 
       {/* Size */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 relative flex-shrink-0">
-        <div className="flex items-center h-[60px]">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 relative flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center">
           <button
             ref={sizeRef}
             className={`flex flex-col items-center justify-center gap-1 p-2 rounded w-14 h-14 ${isSizeOpen ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-300'}`}
@@ -343,9 +374,9 @@ export default function Toolbar({
       </div>
 
       {/* Shapes */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
-        <div className="flex gap-2 h-[60px] items-center">
-          <div className="grid grid-cols-12 gap-1 bg-[#1a1a1a] border border-white/10 rounded p-1 w-[380px] h-[60px] overflow-hidden [&_button]:p-1 [&_svg]:h-4 [&_svg]:w-4">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <div className="grid grid-cols-12 gap-0.5 bg-[#1a1a1a] border border-white/10 rounded p-1 w-[340px] h-[60px] overflow-hidden [&_button]:p-1 [&_svg]:h-4 [&_svg]:w-4">
             <ToolBtn icon={<Minus size={14}/>} active={currentTool==='line'} onClick={()=>setCurrentTool('line')} label={t('tool.line')} />
             <ToolBtn icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 19c4-4 4-10 14-10"/></svg>} active={currentTool==='curve'} onClick={()=>setCurrentTool('curve')} label={t('tool.curve')} />
             <ToolBtn icon={<Circle size={14}/>} active={currentTool==='circle'} onClick={()=>setCurrentTool('circle')} label={t('tool.circle')} />
@@ -375,9 +406,9 @@ export default function Toolbar({
       </div>
 
       {/* Colors */}
-      <div className="flex flex-col h-full px-3 border-r border-white/10 flex-shrink-0">
-        <div className="flex gap-3 h-[60px] items-center">
-          <div className="flex gap-2 flex-shrink-0">
+      <div className="flex flex-col h-full px-2 border-r border-white/10 flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <div className="flex gap-1.5 flex-shrink-0">
             <button 
               className="flex flex-col items-center justify-center relative w-8 h-8 rounded-full"
               onClick={() => setActiveColorSlot(1)}
@@ -399,7 +430,7 @@ export default function Toolbar({
               {DEFAULT_COLORS.map((c, i) => (
                 <button
                   key={i}
-                  className="w-4 h-4 rounded-full border border-white/10 hover:scale-110 transition-transform flex-shrink-0"
+                  className="h-3.5 w-3.5 rounded-full border border-white/10 hover:scale-110 transition-transform flex-shrink-0"
                   style={{backgroundColor: c}}
                   onClick={(e) => handleColorSelect(c, e)}
                   onContextMenu={(e) => handleColorSelect(c, e)}
@@ -410,7 +441,7 @@ export default function Toolbar({
               {customColors.map((c, i) => (
                 <button
                   key={`custom-${i}`}
-                  className="w-4 h-4 rounded-full border border-white/10 hover:scale-110 transition-transform flex-shrink-0"
+                  className="h-3.5 w-3.5 rounded-full border border-white/10 hover:scale-110 transition-transform flex-shrink-0"
                   style={{backgroundColor: c === 'transparent' ? '#202020' : c}}
                   onClick={(e) => c !== 'transparent' && handleColorSelect(c, e)}
                   onContextMenu={(e) => c !== 'transparent' && handleColorSelect(c, e)}
@@ -419,7 +450,7 @@ export default function Toolbar({
             </div>
           </div>
           
-          <div className="flex flex-col gap-1 ml-1">
+          <div className="flex flex-col gap-1">
             <button
               ref={colorPickerRef}
               type="button"
@@ -494,8 +525,8 @@ export default function Toolbar({
       </div>
 
       {/* Layers */}
-      <div className="flex flex-col h-full px-3 flex-shrink-0">
-        <div className="flex items-center h-[60px]">
+      <div className="flex flex-col h-full px-2 flex-shrink-0">
+        <div className="flex flex-1 items-center justify-center">
           <button className="flex flex-col items-center justify-center gap-1 p-2 rounded w-14 h-14 hover:bg-white/5 text-gray-300">
             <Layers size={24} strokeWidth={1.5} />
           </button>
@@ -505,8 +536,8 @@ export default function Toolbar({
 
       {/* Shape Background */}
       {isShapeBackgroundTool && (
-        <div className="flex flex-col h-full px-3 border-l border-r border-white/10 flex-shrink-0">
-          <div className="flex items-center gap-2 h-[60px]">
+        <div className="flex flex-col h-full px-2 border-l border-r border-white/10 flex-shrink-0">
+          <div className="flex flex-1 items-center justify-center gap-2">
             <label className="flex h-8 items-center gap-2 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 hover:bg-white/10">
               <input
                 type="checkbox"
@@ -526,20 +557,104 @@ export default function Toolbar({
 
       {/* Text */}
       {currentTool === 'text' && (
-        <div className="flex flex-col h-full px-3 border-l border-r border-white/10 flex-shrink-0">
-          <div className="flex items-center gap-2 h-[60px]">
-            <label className="flex h-8 items-center gap-2 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 hover:bg-white/10">
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 accent-[#4cc2ff]"
-                checked={textBackgroundMode === 'color'}
+        <div className="flex flex-col h-full px-2 border-l border-r border-white/10 flex-shrink-0">
+          <div className="flex flex-1 w-[256px] flex-col justify-center gap-2">
+            <div className="grid grid-cols-[1fr_48px] gap-2">
+              <select
+                className="h-8 min-w-0 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 outline-none hover:bg-white/10"
+                value={textStyle.fontFamily}
+                title="Font"
+                style={{ colorScheme: 'dark' }}
                 onChange={(e) => {
-                  setTextBackgroundMode(e.target.checked ? 'color' : 'transparent');
-                  if (e.target.checked) setActiveColorSlot(2);
+                  if (hasActiveTextSelection) {
+                    dispatchTextStyle('fontFamily', e.target.value);
+                  } else {
+                    setTextStyle(prev => ({ ...prev, fontFamily: e.target.value }));
+                  }
+                }}
+              >
+                {['Arial', 'Verdana', 'Times New Roman', 'Georgia', 'Courier New', 'Trebuchet MS'].map(font => (
+                  <option key={font} value={font} className="bg-[#2b2b2b] text-gray-200">{font}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min={8}
+                max={144}
+                className="h-8 w-full rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 outline-none hover:bg-white/10"
+                value={textStyle.fontSize}
+                title="Text size"
+                onChange={(e) => {
+                  const nextSize = Number(e.target.value);
+                  if (Number.isFinite(nextSize)) {
+                    const fontSize = Math.max(8, Math.min(144, nextSize));
+                    if (hasActiveTextSelection) {
+                      dispatchTextStyle('fontSize', fontSize);
+                    } else {
+                      setTextStyle(prev => ({ ...prev, fontSize }));
+                    }
+                  }
                 }}
               />
-              Background
-            </label>
+            </div>
+            <div className="grid grid-cols-[96px_1fr] gap-2">
+              <div className="flex h-8 w-24 overflow-hidden rounded border border-white/20">
+                <button
+                  className={`flex h-8 w-8 items-center justify-center ${textStyle.bold ? 'bg-[#4cc2ff]/30 text-white' : 'bg-[#2b2b2b] text-gray-200 hover:bg-white/10'}`}
+                  title="Bold"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (hasActiveTextSelection) {
+                      dispatchTextStyle('bold');
+                    } else {
+                      setTextStyle(prev => ({ ...prev, bold: !prev.bold }));
+                    }
+                  }}
+                >
+                  <Bold size={14} />
+                </button>
+                <button
+                  className={`flex h-8 w-8 items-center justify-center border-l border-white/10 ${textStyle.italic ? 'bg-[#4cc2ff]/30 text-white' : 'bg-[#2b2b2b] text-gray-200 hover:bg-white/10'}`}
+                  title="Italic"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (hasActiveTextSelection) {
+                      dispatchTextStyle('italic');
+                    } else {
+                      setTextStyle(prev => ({ ...prev, italic: !prev.italic }));
+                    }
+                  }}
+                >
+                  <Italic size={14} />
+                </button>
+                <button
+                  className={`flex h-8 w-8 items-center justify-center border-l border-white/10 ${textStyle.underline ? 'bg-[#4cc2ff]/30 text-white' : 'bg-[#2b2b2b] text-gray-200 hover:bg-white/10'}`}
+                  title="Underline"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    if (hasActiveTextSelection) {
+                      dispatchTextStyle('underline');
+                    } else {
+                      setTextStyle(prev => ({ ...prev, underline: !prev.underline }));
+                    }
+                  }}
+                >
+                  <Underline size={14} />
+                </button>
+              </div>
+              <label className="flex h-8 min-w-0 items-center justify-center gap-1.5 rounded border border-white/20 bg-[#2b2b2b] px-2 text-xs text-gray-200 hover:bg-white/10">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 accent-[#4cc2ff]"
+                  checked={textBackgroundMode === 'color'}
+                  onChange={(e) => {
+                    setTextBackgroundMode(e.target.checked ? 'color' : 'transparent');
+                    if (e.target.checked) setActiveColorSlot(2);
+                  }}
+                />
+                Background
+              </label>
+            </div>
           </div>
           <span className="text-[11px] text-center mt-auto text-gray-400">Advance</span>
         </div>
